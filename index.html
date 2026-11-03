@@ -1482,6 +1482,17 @@ async function removeDemo() {
   toast('تم المسح.');
 }
 
+  async function clearAudit() {
+  if (!isStaff()) return;
+  if (!(await confirmBox('مسح سجل التعديلات كله نهائيًا؟\nمفيش استرجاع للسجل بعد المسح.', 'مسح'))) return;
+  try {
+    const snap = await db.collection('audit').get();
+    for (const d of snap.docs) await db.doc('audit/' + d.id).delete();
+    toast('تم مسح السجل (' + snap.size + ' وثيقة).');
+    logAudit({ x: 'del', n: 'مسح سجل التعديلات' });
+  } catch (e) { toast(errText(e), true); }
+}
+  
 /* =====================================================================
    سجل التعديلات
    ===================================================================== */
@@ -1490,7 +1501,8 @@ function pageAudit() {
     h('p', { class: 'lead', text: 'بيسجل تعديل أي درجة كانت مرصودة قبل كده، وأي تعديل بعد اعتماد الكشف، والاعتماد والفتح، وتغييرات الفصول والتكليف. آخر 8 أسابيع.' }));
   const q = h('input', { type: 'text', placeholder: 'بحث باسم طالب أو معلم أو مادة…', id: 'auditQ' });
   const out = h('div'); const info = h('div', { class: 'empty', text: 'جارٍ التحميل…' });
-  wrap.append(h('div', { class: 'filter' }, q), out); out.append(info);
+const clearBtn = isStaff() ? h('button', { class: 'btn danger', type: 'button', text: 'مسح سجل التعديلات', onclick: clearAudit }) : null;
+wrap.append(h('div', { class: 'filter' }, q, clearBtn), out); out.append(info);
   let entries = [];
   function stuName(cid, id) { const s = ((S.classes[cid] || {}).students || []).find(x => x.id === id); return s ? s.name : 'طالب'; }
   function describe(e) {

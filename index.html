@@ -42,7 +42,15 @@
   @media print { #splash { display: none !important; } }
   body.landing .tabwrap, body.landing .chip, body.landing .strip-top { display: none; }
   body.landing main { max-width: none; padding: 0; }
-  .lp-hero { position: relative; overflow: hidden; background: linear-gradient(120deg, #0c2236 0%, #14344f 55%, #1b4a70 100%); color: #fff; }
+  .lp-hero { position: relative; overflow: hidden; background: #0c2236; color: #fff; }
+  .lp-bg { position: absolute; inset: 0; overflow: hidden; }
+  .lp-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1); transition: opacity .8s ease, transform 4s linear; }
+  .lp-bg img.on { opacity: 1; transform: scale(1.07); }
+  .lp-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(8,22,36,.92) 0%, rgba(12,34,54,.72) 48%, rgba(12,34,54,.38) 100%); }
+  .lp-dots { position: absolute; bottom: 22px; left: 24px; display: flex; gap: 8px; z-index: 2; }
+  .lp-dots button { width: 10px; height: 10px; border-radius: 5px; border: 0; padding: 0; cursor: pointer; background: rgba(255,255,255,.45); transition: width .3s, background .3s; }
+  .lp-dots button.on { width: 30px; background: var(--yellow); }
+  @media (prefers-reduced-motion: reduce) { .lp-bg img { transition: opacity .01s; transform: none !important; } .lp-dots button { transition: none; } }
   .lp-inner { position: relative; max-width: 1180px; margin: 0 auto; padding: 72px 24px 84px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; min-height: min(680px, calc(100vh - 90px)); }
   .lp-eyebrow { display: inline-block; font-size: .78rem; letter-spacing: .16em; font-weight: 700; text-transform: uppercase; color: var(--yellow); padding-bottom: 8px; border-bottom: 2px solid var(--yellow); margin-bottom: 18px; }
   .lp-title { font-family: var(--display); font-size: 2.7rem; line-height: 1.15; font-weight: 800; margin: 0 0 16px; color: #fff; letter-spacing: -.01em; }
@@ -73,7 +81,8 @@
     .lp-inner { grid-template-columns: 1fr; gap: 28px; padding: 36px 18px 64px; min-height: 0; }
     .lp-title { font-size: 1.9rem; } .lp-lead { font-size: 1rem; } .lp-points { display: none; }
     .lp-logo { margin-top: 18px; } .lp-logo img { width: 170px; height: 170px; }
-    .lp-card { padding: 22px; }
+    .lp-card { padding:22px; }
+        .lp-dots { left: 18px; bottom: 20px; }
     .lp-feats { grid-template-columns: 1fr; } .lp-more { padding: 36px 18px 16px; }
   }
   :root {
@@ -2611,7 +2620,8 @@ function fbLogin() {
     const nm = h('input', { type: 'text', id: 'firstName', placeholder: 'Your name' });
     const msg = h('div', { class: 'banner err', hidden: true, role: 'alert' });
     const fail = t => { msg.textContent = t; msg.hidden = false; };
-    const finish = () => { document.body.classList.remove('landing'); document.documentElement.setAttribute('dir', 'rtl'); document.documentElement.setAttribute('lang', 'ar'); resolve(); };
+        let timer = null;
+    const finish = () => { if (timer) clearInterval(timer); document.body.classList.remove('landing'); document.documentElement.setAttribute('dir', 'rtl'); document.documentElement.setAttribute('lang', 'ar'); resolve(); };
     const login = async e => {
       if (e) e.preventDefault(); msg.hidden = true;
       const id = loginId(email.value);
@@ -2642,6 +2652,19 @@ function fbLogin() {
       if (!email.value.includes('@')) { fail('If you use a school code, please ask the school to reissue it. Password reset works with email accounts only.'); return; }
       try { await authM.sendPasswordResetEmail(auth, email.value.trim()); toast('A password reset link was sent to your email.'); } catch (err) { fail(authErrEn(err)); }
     };
+    const imgs = SLIDES.map((sl, i) => h('img', { alt: sl.alt, decoding: 'async', style: 'object-position:' + sl.pos, class: i === 0 ? 'on' : '' }));
+    imgs[0].src = SLIDES[0].src; imgs[0].setAttribute('fetchpriority', 'high');
+    const dots = SLIDES.map((sl, i) => h('button', { type: 'button', 'aria-label': 'Show photo ' + (i + 1), class: i === 0 ? 'on' : '', onclick: () => { show(i); restart(); } }));
+    let cur = 0;
+    const loadRest = () => imgs.forEach((im, i) => { if (i && !im.src) im.src = SLIDES[i].src; });
+    const show = i => {
+      const n = (i + imgs.length) % imgs.length; if (!imgs[n].src) imgs[n].src = SLIDES[n].src;
+      imgs[cur].classList.remove('on'); dots[cur].classList.remove('on'); cur = n; imgs[cur].classList.add('on'); dots[cur].classList.add('on');
+    };
+    const restart = () => { if (timer) clearInterval(timer); timer = setInterval(() => { if (!document.hidden) show(cur + 1); }, 4000); };
+    if (imgs[0].complete) setTimeout(loadRest, 800); else imgs[0].addEventListener('load', () => setTimeout(loadRest, 800), { once: true });
+    setTimeout(loadRest, 4000);
+    restart();
     const ico = d => '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
     const IC = { check: ico('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/>'), chart: ico('<path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/>'), shield: ico('<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z"/><path d="m9 12 2.200 2.200L15 10.500"/>'), device: ico('<rect x="3" y="5" width="14" height="10" rx="1.500"/><path d="M8 19h4m-2-4v4"/><rect x="18" y="9" width="3.500" height="9" rx=".8"/>') };
     const more = h('section', { class: 'lp-more' });
@@ -2658,7 +2681,7 @@ function fbLogin() {
     copy.append(pts);
     copy.append(h('div', { class: 'lp-logo' }, h('img', { src: LOGO_URL, alt: 'Opera City Language School logo', width: 240, height: 240, decoding: 'async' })));
     v.append(h('div', { class: 'lp', dir: 'ltr', lang: 'en' },
-      h('section', { class: 'lp-hero' },
+            h('section', { class: 'lp-hero' }, h('div', { class: 'lp-bg' }, imgs), h('div', { class: 'lp-shade' }),
         h('div', { class: 'lp-inner' }, copy,
           h('div', { class: 'lp-side' }, h('div', { class: 'lp-card' },
             h('h2', { text: 'Sign in' }), h('p', { class: 'lp-hint', text: 'Welcome back. Enter your details to continue.' }),
@@ -2668,7 +2691,8 @@ function fbLogin() {
             h('details', { class: 'lp-first' }, h('summary', { text: 'First time here? Create the admin account' }),
               h('p', { class: 'note', text: 'Enter your email and password above, type your name below, then press Create. The first account created becomes the system owner. Other users are added by the owner.' }),
               h('label', { class: 'f' }, 'Your name', nm),
-              h('div', { style: 'margin-top:10px' }, h('button', { class: 'btn', type: 'button', text: 'Create admin account', onclick: create }))))))),
+              h('div', { style: 'margin-top:10px' }, h('button', { class: 'btn', type: 'button', text: 'Create admin account', onclick: create })))))),
+        h('div', { class: 'lp-dots' }, dots)),
       more));
     endSplash();
     if (window.innerWidth > 820) email.focus();

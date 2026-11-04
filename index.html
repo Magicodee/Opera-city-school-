@@ -2588,6 +2588,16 @@ function blobDownloader() {
     return { status: 'saved' };
   } };
 }
+  const IMG = {
+  s2: 'https://res.cloudinary.com/df5qqg0v0/image/upload/v1793750258/IMG_1174_vbjo1w.jpg',
+  s3: 'https://res.cloudinary.com/df5qqg0v0/image/upload/v1793750248/IMG_1175_a1hmz7.jpg',
+  s4: 'https://res.cloudinary.com/df5qqg0v0/image/upload/v1793750249/IMG_1176_plqees.jpg'
+};
+const SLIDES = [
+  { src: IMG.s2, pos: '50% 55%', alt: 'School campus with playgrounds, pool and school buses' },
+  { src: IMG.s3, pos: '50% 50%', alt: 'The school building' },
+  { src: IMG.s4, pos: '60% 50%', alt: 'Graduation celebration at the school' }
+];
 // صفحة الاستقبال: تسجيل الدخول (إنجليزي) باللوجو الجديد
 function fbLogin() {
   return new Promise(resolve => {
